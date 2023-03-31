@@ -1,0 +1,79 @@
+---
+title: "Macrotrics Assignment 1"
+author: "Unterweger L., Pirich G., Tijani S."
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(stats)
+library(urca)
+library(forecast)
+```
+
+## Excercise 1
+### Loading and Cleaning Data
+```{r}
+fredmd <- read.csv("FRED_MD_data.csv")[-1,]
+head(fredmd)
+```
+
+\textit{Create a function that takes a vector containing observations of a time series as input and returns a dataframe with the following transformed series in its columns as output:
+– the original time series in its raw form.
+– the log-transformed time series.
+– month-on-month growth rates in percent.
+– year-on-year growth rates in percent.
+– the first lag of the year-on-year growth rates of the time series. !!!!Was ist das???}
+
+```{r}
+test <- c(1,4,5,6,5,4)
+input_function <- function(input_vector){
+  output_df <- data.frame(
+    orig = input_vector,
+    log_ts = log(input_vector),
+    mom_growth = ((input_vector-lag(input_vector))/input_vector)*100,
+    yoy_growth = ((input_vector-lag(input_vector,n=12))/input_vector)*100,
+    yoy_growth_lag = ((lag(input_vector,n=1)-lag(input_vector,n=13))/lag(input_vector,n=1))*100
+  )
+  return(output_df)
+}
+input_function(fredmd$RETAILx)
+```
+
+\textit{Use the created function to create a dataframe with the various transformation for US industrial production (mnemonic INDPRO), plot the logged time series and the yearly changes produced by the function. Briefly describe the properties of the time series.}
+```{r}
+industrial_prod <- cbind(date=as.Date(fredmd$sasdate, "%m/%d/%Y"),input_function(fredmd$INDPRO))
+ggplot(industrial_prod, aes(x=date,y=log_ts))+
+  geom_line( color="#69b3a2", alpha=0.9, linetype=1) +
+  ggtitle("Time Series of logged Industrial Production (INDPRO)")+
+  ylab("logged industrial production")
+ggplot(industrial_prod, aes(x=date,y=yoy_growth))+
+  geom_line( color="#69b3a2", alpha=0.9, linetype=1) +
+  ggtitle("Time Series of yoy change of Industrial Production (INDPRO)")+
+  ylab("yoy change of industrial production")
+```
+
+DESCRIBE THE FEATURES
+
+\textit{Using suitable functions from the stats and urca package, assess the properties of both logged industrial production and its yearly growth rate. Plot the autocorrelation function and perform Dickey-Fuller tests to test for a unit root (note the different specifications, i.e. including a drift or a trend), interpret the results.}
+```{r}
+# Create time series object
+log_INDPRO <- ts(industrial_prod$log_ts, frequency = 12, start = c(1959,1,1))
+yoy_INDPRO <- ts(industrial_prod$yoy_growth, frequency = 12, start = c(1960,1,1))
+
+# Plot the time series
+plot(log_INDPRO)
+plot(yoy_INDPRO)
+
+# Create the acf plots
+Acf(log_INDPRO)
+Acf(yoy_INDPRO)
+
+# Dickey Fuller Test
+tseries::adf.test(na.omit(yoy_INDPRO))
+tseries::adf.test(na.omit(log_INDPRO))
+```
+
