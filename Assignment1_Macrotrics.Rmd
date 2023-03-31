@@ -77,3 +77,19 @@ tseries::adf.test(na.omit(yoy_INDPRO))
 tseries::adf.test(na.omit(log_INDPRO))
 ```
 
+\textit{Estimate a suitable AR model (e.g. using the ar.ols() function) for the stationary time series (as determined in the previous point).1 How is the lag order determined by default? Use the estimated model to produce forecasts for the next year and plot them. Interpret their behaviour (i.e. are they converging towards a certain value? What could that be?). Use the produced forecasts to also forecast the change in the original time series.}
+```{r}
+mod1 <- ar.ols(na.omit(yoy_INDPRO))
+summary(mod1)
+```
+
+## Excercise 2
+
+\textit{Read Kilian & Park (2009), who discuss the effects of oil price shocks on the US stock market, focus on Sections 2 and 3.1-3.3. Load the provided data by Kilian & Park (2009), which contains a measure of change in oil production, a measure of real economic activity, the real price of oil, and changes in real US dividend growth from 1973M1 to 2016M12.}
+
+```{r}
+library(vars)
+data <- read.table("data_kilian_park_2009.txt")
+data
+```
+
