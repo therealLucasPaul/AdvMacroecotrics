@@ -90,6 +90,41 @@ summary(mod1)
 ```{r}
 library(vars)
 data <- read.table("data_kilian_park_2009.txt")
+#("Global Oil Production Change","Global Real Activity","Real Price of Oil","US Stock Returns")
+colnames(data) <- c("GOPC","GRA","RPO","USSR")
 data
 ```
+\begin{itemize}
+\item Using the the packages vars in R (or an equivalent one in another language), estimate the VAR described in
+section 2.2 using the variables in the same order as specified by Kilian & Park (2009).
+```{r}
+mod1 <- VAR(data,p=24, type="none")
+mod1
+summary(mod1)
+```
 
+\item Using the estimated VAR, compute impulse response functions (take a look at the irf() function in vars, it
+uses the same identification scheme as Kilian & Park (2009) propose (recursive ordering based on a Cholesky
+decomposition of the vcov-matrix of the errors) by default. Replicate Figure 1 and the lower panel in figure 3
+of Kilian & Park (2009). Interpret the results.
+```{r}
+ir.mod1 <- irf(mod1,impulse=c("GOPC","GRA","RPO"),respons = "RPO",n.ahead = 15)
+par(mfrow=c(3,1))
+plot(ir.mod1,ylim=c(-6,12))
+```
+
+\item Calculate forecast error variance decompositions for the included variables (take a look at the fevd() function
+in vars). Replicate Table 2 of Kilian & Park (2009). Interpret the results.
+```{r}
+
+```
+
+\item Note that the dataset provided misses US stock market returns (due to the licensing of the underlying time
+series). Look for alternative data on the US stock market,4 create a variable similar to the one used by Kilian
+& Park (2009). Re-estimate the model and replicate Figure 1 again as well as the top panel of Figure 3 and
+Table 1.5 Interpret the results.
+```{r}
+
+```
+
+\end{itemize}
