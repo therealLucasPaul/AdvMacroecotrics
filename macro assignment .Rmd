@@ -1,0 +1,269 @@
+---
+title: "Macrotrics Assignment 1"
+author: "Unterweger L., Pirich G., Tijani S."
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyverse)
+library(stats)
+library(urca)
+library(forecast)
+library(quantmod)
+library(vars)
+```
+## Excercise 1
+### Loading and Cleaning Data
+
+\textit{Create a function that takes a vector containing observations of a time series as input and returns a dataframe with the following transformed series in its columns as output:
+– the original time series in its raw form.
+– the log-transformed time series.
+– month-on-month growth rates in percent.
+– year-on-year growth rates in percent.
+– the first lag of the year-on-year growth rates of the time series.}
+
+```{r}
+setwd("~/Library/Mobile Documents/com~apple~CloudDocs/Wirtschaftsuniversität/MASTER/Advanced Macroeconometrics")
+
+current_1 <- read.csv("current.csv")[-1,] #loading in the data and removing the first row
+```
+
+Creating a function that transforms the data accordingly
+
+```{r}
+ts_transform <- function(x) {
+  y <- data.frame(matrix(NA,    # Create empty data frame
+                                 nrow = NROW(x),
+                                 ncol = 0))
+  y$date<- current_1$sasdate
+  y$raw <- x
+  y$log <- log(x)
+  y$mom <- ((x-lag(x))/lag(x))*100
+  y$yoy <- ((x-lag(x, 12))/lag(x, 12))*100
+  y$yoy_1stlag <- lag((x-lag(x, 12))/lag(x, 12))*100
+  return(y)
+}
+```
+
+\textit{Use the created function to create a dataframe with the various transformation for US industrial production (mnemonic INDPRO), plot the logged time series and the yearly changes produced by the function. Briefly describe the properties of the time series.}
+```{r}
+USINDPRO <-ts_transform(current_1$INDPRO)
+
+USINDPRO_1 <- USINDPRO %>% filter(!is.na(log))
+
+#creating an xts object for log and year on year growth rates
+USINDPRO_log <- xts(USINDPRO_1$log, mdy(USINDPRO_1$date))
+USINDPRO_yoy <- xts(USINDPRO_1$yoy, mdy(USINDPRO_1$date))
+
+par(mfrow = c(1, 2))
+
+plot(as.zoo(USINDPRO_log), 
+     col = "darkred",
+     lwd = 2,
+     ylab = "log",
+     xlab = "date",
+     main = "US INDPRO",
+     cex.main = 1)
+
+plot(as.zoo(USINDPRO_yoy), 
+     col = "darkred",
+     lwd = 2,
+     ylab = "log",
+     xlab = "date",
+     main = "US INDPRO",
+     cex.main = 1)
+```
+
+Some comments: The INDPRO exhibits an upward trend. But since the global financial crisis in 2008, industrial production is stagnant. The plot is "somewhat" concave as industrial production seems to grow less fast over time. One can also clearly see the crisis in the 70s, 80s, and downturns induced by 2008 financial crisis as well as COVID. 
+
+The year on year growth rates exhibit high volatility, ranging between +15 and -15 percent. Extreme fluctuation during crisis years and rapid catch-up, see 2008.
+Downward trend observable, which is in line with decreasing slope of INDPRO plot. 
+
+
+\textit{Using suitable functions from the stats and urca package, assess the properties of both logged industrial production and its yearly growth rate. 
+Plot the autocorrelation function and perform Dickey-Fuller tests to test for a unit root (note the different specifications, i.e. including a drift or a trend), interpret the results.}
+```{r}
+dev.off()
+par(mfrow = c(1,2))
+
+acf(USINDPRO_1$log)
+acf(na.omit(USINDPRO_1$yoy))
+```
+The log(INDPRO) exhibits clear autocorrelation, which is always outside the 5 percent confidence band. 
+The year on year growth rates exhibit significant autocorrelation over the first 12 lags and then negative autocorrelation. 
+
+```{r}
+summary(ur.df(USINDPRO_1$log, 
+              type = "none", 
+              lags = 0, 
+              selectlags = "Fixed"))
+
+#evidence for stationarity
+summary(ur.df(USINDPRO_1$log, 
+              type = "drift", 
+              lags = 0,
+              selectlags = "Fixed"))
+
+summary(ur.df(USINDPRO_1$log, 
+              type = "trend", 
+              lags = 0, 
+              selectlags = "Fixed"))
+
+summary(ur.df(USINDPRO_1$log, 
+              type = "trend", 
+              lags = 1, 
+              selectlags = "Fixed"))
+
+
+
+
+summary(ur.df(na.omit(USINDPRO_1$yoy), 
+              type = "none", 
+              lags = 0, 
+              selectlags = "Fixed"))
+
+summary(ur.df(na.omit(USINDPRO_1$yoy), 
+              type = "trend", 
+              lags = 0, 
+              selectlags = "Fixed"))
+```
+We cannot reject that the log of INDPRO in the US has a unit root. Hence we cannot find evidence that the time series is stationary, with the exception for the specification of the drift term. Including a drift term, we can reject the presence of a unit root at the one percent level, which indicates stationary.   
+
+There is strong evidence that the year on year growth rates are stationary. See all specifications of DF-test.
+
+
+\textit{Estimate a suitable AR model (e.g. using the ar.ols() function) for the stationary time series (as determined in the previous point).1 How is the lag order determined by default? Use the estimated model to produce forecasts for the next year and plot them. Interpret their behaviour (i.e. are they converging towards a certain value? What could that be?). Use the produced forecasts to also forecast the change in the original time series.}
+```{r}
+#Since there is evidence for stationarity, when the including an intercept, we set intercept in ar.ols = TRUE. 
+mod_log <- ar.ols(USINDPRO_1$log, na.action = na.omit, 
+                demean = TRUE, intercept = TRUE)
+
+mod_yoy <- ar.ols(USINDPRO_1$yoy, na.action = na.omit,
+                demean = FALSE, intercept = FALSE)
+```
+By default the lag order is determined by the AIC information criterion. For the log of INDPRO a lag order of 25 is estimated. The model for the year on year changes is estimated with lag order 26
+
+```{r}
+par(mfrow=c(1,2))
+
+predict_mod_log <- predict(mod_log, USINDPRO_1$log, n.ahead = 12)
+
+plot.ts(USINDPRO_1$log, , 
+        xlim = c(0,800),
+        ylim = c(3,5),
+        xlab = "Time",
+        ylab = "log(INDPRO)",
+        main = "Forecast for log(INDPRO)", 
+        col = "steelblue") #plotting th predicted values) #plotting th predicted values
+points(predict_mod_log$pred, type = "l", col = "darkred")
+
+predict_mod_log <- predict(mod_log, USINDPRO_1$log, n.ahead = 500)
+
+plot.ts(USINDPRO_1$log, , 
+        xlim = c(0,1000),
+        ylim = c(3,5),
+        xlab = "Time",
+        ylab = "log(INDPRO)",
+        main = "Forecast for log(INDPRO)", 
+        col = "steelblue") #plotting th predicted values) #plotting th predicted values
+points(predict_mod_log$pred, type = "l", col = "darkred")
+
+```
+The model predicts a slight gradual decline over the coming 12 months. In the long run, the predictions of the model seem to converge to approx. 4.75. This value could be the unconditional mean. 
+```{r}
+par(mfrow=c(1,2))
+
+predict_mod_yoy <- predict(mod_yoy, USINDPRO_1$yoy, n.ahead = 12)
+
+plot.ts(USINDPRO_1$yoy, 
+        xlim = c(0,800),
+        ylim = c(-17,17),
+        xlab = "Time",
+        ylab = "Percent",
+        main = "Year on Year Growth Rates", 
+        col = "steelblue") #plotting th predicted values
+points(predict_mod_yoy$pred, type = "l", col = "darkred")
+
+predict_mod_yoy <- predict(mod_yoy, USINDPRO_1$yoy, n.ahead = 500)
+
+#Alternative version to check convergence pattern
+plot.ts(USINDPRO_1$yoy, 
+        xlim = c(0,1000),
+        ylim = c(-17,17),
+        xlab = "Time",
+        ylab = "Percent",
+        main = "Year on Year Growth Rates", 
+        col = "steelblue") #plotting th predicted values
+points(predict_mod_yoy$pred, type = "l", col = "darkred")
+
+```
+For the year on year growth rates the model extends the fluctuations of the period and predicts a continuing volatility. To check the convergence pattern we predict 500 periods ahead. The predictions clearly converge to zero, as can be seen from the second plot. This value could correspond to the unconditional mean.
+
+#out of sample forecasts
+```{r}
+subset <- USINDPRO_1 %>% subset(date < "2010-01-01")
+
+mod_subset_log <- ar.ols(subset$log, aic = TRUE, order.max = NULL, na.action = na.omit,
+                demean = TRUE, intercept = TRUE)
+
+rmse <- function(ts,lag,holdout){}
+```
+
+
+
+
+
+
+
+
+
+#2nd exercise
+#Using the the packages vars in R (or an equivalent one in another language), estimate the VAR described in section 2.2 using the variables in the same order as specified by Kilian & Park (2009)
+
+df <- read.table('data_kilian_park_2009.txt',sep='')
+
+df <- tibble(df)
+
+df_1 <- df %>% 
+  rename("PercChangeinCrudeProd" = "V1") %>%
+  rename("GlobalRealActivity" = "V2") %>%
+  rename("RealPriceofCrudeOil" = "V3") %>%
+  rename("USdividend" = "V4")
+
+myts <- ts(df_1, start=c(1973, 1), end=c(2006, 12), frequency=12)
+myts <- myts[,c(1,2,3,4)]
+
+
+#estimating the VAR models of the authors
+var <- VAR(myts, p = 24, type = "const")
+
+
+#replicating figure 3
+irf_oil_demand_specific_shocks <- irf(var, impulse = "RealPriceofCrudeOil", response = "USdividend", boot = TRUE, cumulative = TRUE)
+
+plot(irf_oil_demand_specific_shocks)
+
+
+irf_agg_demand <- irf(var, impulse = "GlobalRealActivity", response = "USdividend", boot = TRUE, cumulative = TRUE, n.ahead = 15)
+
+plot(irf_agg_demand)
+
+
+irf_oil_supply <- irf(var, impulse = "PercChangeinCrudeProd", response = "USdividend", boot = TRUE, cumulative = TRUE, n.ahead = 15)
+
+for(x in 1:length(irf_oil_supply$irf$PercChangeinCrudeProd)){
+  irf_oil_supply$irf$PercChangeinCrudeProd[x,] <- irf_oil_supply$irf$PercChangeinCrudeProd[x,]*(-1)
+  irf_oil_supply$Upper$PercChangeinCrudeProd[x,] <- irf_oil_supply$Upper$PercChangeinCrudeProd[x,]*(-1)
+  irf_oil_supply$Lower$PercChangeinCrudeProd[x,] <- irf_oil_supply$Lower$PercChangeinCrudeProd[x,]*(-1)
+}
+
+plot(irf_oil_supply)
+
+
+
+
