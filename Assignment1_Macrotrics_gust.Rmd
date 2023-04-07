@@ -162,6 +162,7 @@ plot.ts(USINDPRO_1$log, ,
         col = "steelblue") #plotting th predicted values) #plotting th predicted values
 points(predict_mod_log$pred, type = "l", col = "darkred")
 
+#Alternative pattern to check convergence pattern
 predict_mod_log <- predict(mod_log, USINDPRO_1$log, n.ahead = 500)
 
 plot.ts(USINDPRO_1$log, , 
@@ -174,7 +175,7 @@ plot.ts(USINDPRO_1$log, ,
 points(predict_mod_log$pred, type = "l", col = "darkred")
 
 ```
-The model predicts a slight gradual decline over the coming 12 months. In the long run, the predictions of the model seem to converge to approx. 4.75. This value could be the unconditional mean. 
+The model predicts a slight gradual decline over the coming 12 months. In the long run, the predictions of the model seem to converge to approx. 4.75. This value
 ```{r}
 par(mfrow=c(1,2))
 
@@ -200,23 +201,71 @@ plot.ts(USINDPRO_1$yoy,
         main = "Year on Year Growth Rates", 
         col = "steelblue") #plotting th predicted values
 points(predict_mod_yoy$pred, type = "l", col = "darkred")
-
 ```
 For the year on year growth rates the model extends the fluctuations of the period and predicts a continuing volatility. To check the convergence pattern we predict 500 periods ahead. The predictions clearly converge to zero, as can be seen from the second plot. This value could correspond to the unconditional mean.
 
-#out of sample forecasts
+Next we do an out of sample forecasting exercise
 ```{r}
-subset <- USINDPRO_1 %>% subset(date < "2010-01-01")
+subset <- USINDPRO_1[1:624,] #subset up until 2010
 
-mod_subset_log <- ar.ols(subset$log, aic = TRUE, order.max = NULL, na.action = na.omit,
-                demean = TRUE, intercept = TRUE)
+predict_subset_log <- predict(mod_log, subset$log, n.ahead = 145)
 
-rmse <- function(ts,lag,holdout){}
+plot.ts(USINDPRO_1$log, 
+        xlim = c(0,750),
+        ylim = c(3,5),
+        xlab = "Time",
+        ylab = "log(INDPRO)",
+        main = "Forecast for log(INDPRO)", 
+        col = "steelblue") #plotting th predicted values) #plotting th predicted values
+points(predict_subset_log$pred, type = "l", col = "darkred")
 ```
+Taking a subset up until 2011, we find that the model predicts on average reasonably well on average, as can be seen from the plot.
 
+```{r}
+subset <- USINDPRO_1[1:624,] #subset up until 2010
 
+predict_subset_yoy <- predict(mod_yoy, subset$yoy, n.ahead = 145)
 
+plot.ts(USINDPRO_1$yoy, 
+        xlim = c(0,750),
+        ylim = c(-17,17),
+        xlab = "Time",
+        ylab = "Percent",
+        main = "Year on Year Growth Rates", 
+        col = "steelblue") #plotting th predicted values
+points(predict_subset_yoy$pred, type = "l", col = "darkred")
+```
+The year on year changes are not predicted very accurately. It does not capture the fluctuations. 
 
+\textit{Bonus: Create a function that computes the RMSE of a given AR model based on a lag order and a holdout period that you can specify. That is, the function should take as inputs the time series, the number of lags to include in the AR model and the number of time periods that will be used for computing the RMSE (the holdout period). Note that prior to estimation you should remove the holdout period from the end of the sample, estimate the model, produce forecasts for the holdout period and then compute the RMSE based on the predicted values and the realized values of the time series. Using this function, compare a number of AR models (i.e. with different lag orders) to assess the predictive performance of them. Which one would you choose and why? Might your answer differ with different holdout periods (e.g. 6 versus 12 months forecasting horizon)?}
+```{r}
+rmse_ar <- function(ts_data, lag_order, holdout_period) {
+  # Remove holdout period from the end of the sample
+  ts_data_train <- ts_data[1:(length(ts_data) - holdout_period)]
+  
+  # Estimate the AR model
+  ar_model <- ar(ts_data_train, order.max = lag_order)
+  
+  # Produce forecasts for the holdout period
+  ts_data_test <- ts_data[(length(ts_data) - holdout_period + 1):length(ts_data)]
+  ar_forecasts <- predict(ar_model, n.ahead = holdout_period)
+  
+  # Compute the RMSE based on the predicted values and the realized values of the time series
+  rmse <- sqrt(mean((ts_data_test - ar_forecasts$pred)^2))
+  
+  return(rmse)
+}
+
+rmse_ar(na.omit(USINDPRO_1$yoy), 1, 12)
+rmse_ar(na.omit(USINDPRO_1$yoy), 2, 12)
+rmse_ar(na.omit(USINDPRO_1$yoy), 3, 12)
+rmse_ar(na.omit(USINDPRO_1$yoy), 4, 12)
+rmse_ar(na.omit(USINDPRO_1$yoy), 5, 12)
+rmse_ar(na.omit(USINDPRO_1$yoy), 6, 12)
+rmse_ar(na.omit(USINDPRO_1$yoy), 7, 12)
+rmse_ar(na.omit(USINDPRO_1$yoy), 8, 12)
+rmse_ar(na.omit(USINDPRO_1$yoy), 9, 12)
+```
 
 
 
@@ -263,7 +312,3 @@ for(x in 1:length(irf_oil_supply$irf$PercChangeinCrudeProd)){
 }
 
 plot(irf_oil_supply)
-
-
-
-
