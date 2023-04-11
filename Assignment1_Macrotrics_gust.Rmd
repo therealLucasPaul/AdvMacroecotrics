@@ -244,7 +244,7 @@ rmse_ar <- function(ts_data, lag_order, holdout_period) {
   ts_data_train <- ts_data[1:(length(ts_data) - holdout_period)]
   
   # Estimate the AR model
-  ar_model <- ar(ts_data_train, order.max = lag_order)
+  ar_model <- ar.ols(ts_data_train, order.max = lag_order)
   
   # Produce forecasts for the holdout period
   ts_data_test <- ts_data[(length(ts_data) - holdout_period + 1):length(ts_data)]
