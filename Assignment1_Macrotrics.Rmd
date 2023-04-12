@@ -26,16 +26,15 @@ head(fredmd)
 – the log-transformed time series.
 – month-on-month growth rates in percent.
 – year-on-year growth rates in percent.
-– the first lag of the year-on-year growth rates of the time series. !!!!Was ist das???}
+– the first lag of the year-on-year growth rates of the time series.}
 
 ```{r}
-test <- c(1,4,5,6,5,4)
 input_function <- function(input_vector){
   output_df <- data.frame(
     orig = input_vector,
     log_ts = log(input_vector),
-    mom_growth = ((input_vector-lag(input_vector))/input_vector)*100,
-    yoy_growth = ((input_vector-lag(input_vector,n=12))/input_vector)*100,
+    mom_growth = ((input_vector-lag(input_vector))/lag(input_vector))*100,
+    yoy_growth = ((input_vector-lag(input_vector,n=12))/lag(input_vector,n=12))*100,
     yoy_growth_lag = ((lag(input_vector,n=1)-lag(input_vector,n=13))/lag(input_vector,n=1))*100
   )
   return(output_df)
@@ -56,13 +55,12 @@ ggplot(industrial_prod, aes(x=date,y=yoy_growth))+
   ylab("yoy change of industrial production")
 ```
 
-DESCRIBE THE FEATURES
-
 \textit{Using suitable functions from the stats and urca package, assess the properties of both logged industrial production and its yearly growth rate. Plot the autocorrelation function and perform Dickey-Fuller tests to test for a unit root (note the different specifications, i.e. including a drift or a trend), interpret the results.}
+
 ```{r}
 # Create time series object
 log_INDPRO <- ts(industrial_prod$log_ts, frequency = 12, start = c(1959,1,1))
-yoy_INDPRO <- ts(industrial_prod$yoy_growth, frequency = 12, start = c(1960,1,1))
+yoy_INDPRO <- ts(industrial_prod$yoy_growth, frequency = 12, start = c(1959,1,1))
 
 # Plot the time series
 plot(log_INDPRO)
@@ -81,6 +79,11 @@ tseries::adf.test(na.omit(log_INDPRO))
 ```{r}
 mod1 <- ar.ols(na.omit(yoy_INDPRO))
 summary(mod1)
+mod1
+
+plot(forecast(mod1, h=12))
+plot(window(yoy_INDPRO, start=c(2000,1)))
+lines(y$level, col="red")
 ```
 
 ## Excercise 2
@@ -90,41 +93,75 @@ summary(mod1)
 ```{r}
 library(vars)
 data <- read.table("data_kilian_park_2009.txt")
-#("Global Oil Production Change","Global Real Activity","Real Price of Oil","US Stock Returns")
+#("Global Oil Production Change","Global Real Activity", "Real Price of Oil", "US Dividend Returns")
 colnames(data) <- c("GOPC","GRA","RPO","USSR")
 data
 ```
 \begin{itemize}
-\item Using the the packages vars in R (or an equivalent one in another language), estimate the VAR described in
-section 2.2 using the variables in the same order as specified by Kilian & Park (2009).
+\item Using the the packages vars in R (or an equivalent one in another language), estimate the VAR described in section 2.2 using the variables in the same order as specified by Kilian & Park (2009).
 ```{r}
-mod1 <- VAR(data,p=24, type="none")
-mod1
+mod1 <- VAR(data, p=24, type="const")
+#mod1
 summary(mod1)
 ```
 
-\item Using the estimated VAR, compute impulse response functions (take a look at the irf() function in vars, it
-uses the same identification scheme as Kilian & Park (2009) propose (recursive ordering based on a Cholesky
-decomposition of the vcov-matrix of the errors) by default. Replicate Figure 1 and the lower panel in figure 3
-of Kilian & Park (2009). Interpret the results.
+\item Using the estimated VAR, compute impulse response functions (take a look at the irf() function in vars, it uses the same identification scheme as Kilian & Park (2009) propose (recursive ordering based on a Cholesky decomposition of the vcov-matrix of the errors) by default. Replicate Figure 1 and the lower panel in figure 3 of Kilian & Park (2009). Interpret the results.
 ```{r}
-ir.mod1 <- irf(mod1,impulse=c("GOPC","GRA","RPO"),respons = "RPO",n.ahead = 15)
-par(mfrow=c(3,1))
+ir.mod1 <- irf(mod1, impulse=c("GOPC","GRA","RPO"), response = "RPO",n.ahead = 15)
+
+# Reverse GOPC
+for(i in 1:length(ir.mod1$irf$GOPC)){
+  ir.mod1$irf$GOPC[i] <- ir.mod1$irf$GOPC[i]*(-1)
+  ir.mod1$Upper$GOPC[i] <- ir.mod1$Upper$GOPC[i]*(-1)
+  ir.mod1$Lower$GOPC[i] <- ir.mod1$Lower$GOPC[i]*(-1)
+}
+
 plot(ir.mod1,ylim=c(-6,12))
+
+
+########################NOT WORKING FROM HERE ON########################
+
+ir.mod1_cumulative <- irf(mod1,impulse="GOPC",response = "RPO",n.ahead = 15, cumulative = TRUE)
+# Reverse GOPC
+for(i in 1:length(ir.mod1_cumulative$irf$GOPC)){
+  ir.mod1_cumulative$irf$GOPC[i] <- ir.mod1_cumulative$irf$GOPC[i]*(-1)
+  ir.mod1_cumulative$Upper$GOPC[i] <- ir.mod1_cumulative$Upper$GOPC[i]*(-1)
+  ir.mod1_cumulative$Lower$GOPC[i] <- ir.mod1_cumulative$Lower$GOPC[i]*(-1)
+}
+
+plot(ir.mod1_cumulative)
 ```
 
-\item Calculate forecast error variance decompositions for the included variables (take a look at the fevd() function
-in vars). Replicate Table 2 of Kilian & Park (2009). Interpret the results.
+\item Calculate forecast error variance decompositions for the included variables (take a look at the fevd() function in vars). Replicate Table 2 of Kilian & Park (2009). Interpret the results.
+
 ```{r}
-
+fevd_mod1 <- vars::fevd(mod1, n.ahead=12)
+table2 <- round(fevd_mod1$USSR[c(1,2,3,12),]*100,2)
+table2
 ```
 
-\item Note that the dataset provided misses US stock market returns (due to the licensing of the underlying time
-series). Look for alternative data on the US stock market,4 create a variable similar to the one used by Kilian
-& Park (2009). Re-estimate the model and replicate Figure 1 again as well as the top panel of Figure 3 and
-Table 1.5 Interpret the results.
+\item Note that the dataset provided misses US stock market returns (due to the licensing of the underlying time series). Look for alternative data on the US stock market, create a variable similar to the one used by Kilian & Park (2009). Re-estimate the model and replicate Figure 1 again as well as the top panel of Figure 3 and Table 1.5 Interpret the results.
 ```{r}
+options(scipen=5)
+fred <- read.csv("FRED_MD_data.csv")[,c("sasdate","S.P.500","CPIAUCSL")][-1,]
+str(fred)
 
+# Extract SP500 Growth and Inflation
+ret <- input_function(fred$S.P.500)$mom_growth
+inf <- input_function(fred$CPIAUCSL)$mom_growth
+
+# Compute deflated stock returns
+stockret <- ret - inf
+head(stockret)
+
+# Create time series
+stockret_ts <- ts(stockret, frequency=12, start=c(1959,1))
+head(stockret_ts)
+plot(stockret_ts)
+stockret_ts <- window(stockret_ts, start=c(1973,1), end=c(2016,12))
+plot(stockret_ts)
+
+# Create new data set
+data_new <- cbind(data,as.numeric(stockret_ts))
 ```
-
 \end{itemize}
