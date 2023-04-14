@@ -1,8 +1,9 @@
 ---
-title: "Macrotrics Assignment 1"
+title: "Advanced Macroeconometrics - Assignment 1"
 author: "Unterweger L., Pirich G., Tijani S."
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -59,8 +60,8 @@ ggplot(industrial_prod, aes(x=date,y=yoy_growth))+
 
 ```{r}
 # Create time series object
-log_INDPRO <- ts(industrial_prod$log_ts, frequency = 12, start = c(1959,1,1))
-yoy_INDPRO <- ts(industrial_prod$yoy_growth, frequency = 12, start = c(1959,1,1))
+log_INDPRO <- ts(industrial_prod$log, frequency = 12, start = c(1959,1,1))
+yoy_INDPRO <- ts(industrial_prod$yoy, frequency = 12, start = c(1959,1,1))
 
 # Plot the time series
 plot(log_INDPRO)
@@ -83,12 +84,11 @@ mod1
 
 plot(forecast(mod1, h=12))
 plot(window(yoy_INDPRO, start=c(2000,1)))
-lines(y$level, col="red")
 ```
 
 ## Excercise 2
 
-\textit{Read Kilian & Park (2009), who discuss the effects of oil price shocks on the US stock market, focus on Sections 2 and 3.1-3.3. Load the provided data by Kilian & Park (2009), which contains a measure of change in oil production, a measure of real economic activity, the real price of oil, and changes in real US dividend growth from 1973M1 to 2016M12.}
+\textit{Read Kilian and Park (2009), who discuss the effects of oil price shocks on the US stock market, focus on Sections 2 and 3.1-3.3. Load the provided data by Kilian and Park (2009), which contains a measure of change in oil production, a measure of real economic activity, the real price of oil, and changes in real US dividend growth from 1973M1 to 2016M12.}
 
 ```{r}
 library(vars)
@@ -98,14 +98,13 @@ colnames(data) <- c("GOPC","GRA","RPO","USSR")
 data
 ```
 \begin{itemize}
-\item Using the the packages vars in R (or an equivalent one in another language), estimate the VAR described in section 2.2 using the variables in the same order as specified by Kilian & Park (2009).
+\item Using the the packages vars in R (or an equivalent one in another language), estimate the VAR described in section 2.2 using the variables in the same order as specified by Kilian and Park (2009).
 ```{r}
 mod1 <- VAR(data, p=24, type="const")
-#mod1
 summary(mod1)
 ```
 
-\item Using the estimated VAR, compute impulse response functions (take a look at the irf() function in vars, it uses the same identification scheme as Kilian & Park (2009) propose (recursive ordering based on a Cholesky decomposition of the vcov-matrix of the errors) by default. Replicate Figure 1 and the lower panel in figure 3 of Kilian & Park (2009). Interpret the results.
+\item Using the estimated VAR, compute impulse response functions (take a look at the irf() function in vars, it uses the same identification scheme as Kilian and Park (2009) propose (recursive ordering based on a Cholesky decomposition of the vcov-matrix of the errors) by default. Replicate Figure 1 and the lower panel in figure 3 of Kilian and Park (2009). Interpret the results.
 ```{r}
 ir.mod1 <- irf(mod1, impulse=c("GOPC","GRA","RPO"), response = "RPO",n.ahead = 15)
 
@@ -132,7 +131,7 @@ for(i in 1:length(ir.mod1_cumulative$irf$GOPC)){
 plot(ir.mod1_cumulative)
 ```
 
-\item Calculate forecast error variance decompositions for the included variables (take a look at the fevd() function in vars). Replicate Table 2 of Kilian & Park (2009). Interpret the results.
+\item Calculate forecast error variance decompositions for the included variables (take a look at the fevd() function in vars). Replicate Table 2 of Kilian and Park (2009). Interpret the results.
 
 ```{r}
 fevd_mod1 <- vars::fevd(mod1, n.ahead=12)
@@ -140,7 +139,7 @@ table2 <- round(fevd_mod1$USSR[c(1,2,3,12),]*100,2)
 table2
 ```
 
-\item Note that the dataset provided misses US stock market returns (due to the licensing of the underlying time series). Look for alternative data on the US stock market, create a variable similar to the one used by Kilian & Park (2009). Re-estimate the model and replicate Figure 1 again as well as the top panel of Figure 3 and Table 1.5 Interpret the results.
+\item Note that the dataset provided misses US stock market returns (due to the licensing of the underlying time series). Look for alternative data on the US stock market, create a variable similar to the one used by Kilian and Park (2009). Re-estimate the model and replicate Figure 1 again as well as the top panel of Figure 3 and Table 1.5 Interpret the results.
 ```{r}
 options(scipen=5)
 fred <- read.csv("FRED_MD_data.csv")[,c("sasdate","S.P.500","CPIAUCSL")][-1,]
@@ -162,6 +161,6 @@ stockret_ts <- window(stockret_ts, start=c(1973,1), end=c(2016,12))
 plot(stockret_ts)
 
 # Create new data set
-data_new <- cbind(data,as.numeric(stockret_ts))
+# data_new <- cbind(data,as.numeric(stockret_ts))
 ```
 \end{itemize}
