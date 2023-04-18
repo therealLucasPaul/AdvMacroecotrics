@@ -7,10 +7,6 @@ output:
   html_document: default
 ---
 
-# Setup
-
-Importing necessary packages
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
@@ -35,14 +31,9 @@ fredmd <- read.csv("FRED_MD_data.csv")[-1,]
 head(fredmd[,1:6])
 ```
 
-\textit{Create a function that takes a vector containing observations of a time series as input and returns a dataframe with the following transformed series in its columns as output:
-\begin{itemize}
-\item the original time series in its raw form.
-\item the log-transformed time series.
-\item month-on-month growth rates in percent.
-\item year-on-year growth rates in percent.
-\item the first lag of the year-on-year growth rates of the time series.
-\end{itemize}}
+## Subquestion (a)
+
+\textit{Create a function that takes a vector containing observations of a time series as input and returns a dataframe with the following transformed series in its columns as output: - the original time series in its raw form; -the log-transformed time series; - month-on-month growth rates in percent; - year-on-year growth rates in percent; - the first lag of the year-on-year growth rates of the time series}
 
 ```{r}
 ts_transform <- function(x) {
@@ -58,8 +49,8 @@ ts_transform <- function(x) {
 }
 ```
 
+## Subquestion (b)
 \textit{Use the created function to create a dataframe with the various transformation for US industrial production (mnemonic INDPRO), plot the logged time series and the yearly changes produced by the function. Briefly describe the properties of the time series.}
-
 ```{r}
 industrial_prod <- cbind(date=as.Date(fredmd$sasdate, "%m/%d/%Y"), ts_transform(fredmd$INDPRO))
 head(industrial_prod)
@@ -76,6 +67,7 @@ grid.arrange(p1, p2, ncol=2, nrow = 1)
 
 <!--ADD INTERPRETATION -->
 
+## Subquestion (c)
 \textit{Using suitable functions from the stats and urca package, assess the properties of both logged industrial production and its yearly growth rate. Plot the autocorrelation function and perform Dickey-Fuller tests to test for a unit root (note the different specifications, i.e. including a drift or a trend), interpret the results.}
 ```{r}
 log_INDPRO <- ts(industrial_prod$log, frequency = 12, start = c(1959,1,1))
@@ -86,6 +78,8 @@ Acf(log_INDPRO)
 Acf(yoy_INDPRO)
 ```
 
+The ACF plots show us that....
+<!-- INTERPRETATION -->
 
 ```{r}
 summary(ur.df(na.omit(industrial_prod$yoy), lags = 0, type="none")) # Process is stationary
@@ -94,18 +88,20 @@ summary(ur.df(na.omit(industrial_prod$log), lags = 0, type="drift"))
 summary(ur.df(na.omit(industrial_prod$log), lags = 0, type="trend"))
 ```
 
+The augmented dickey fuller tests...
 <!-- INTERPRETATION -->
 
+## Subquestion (d)
 \textit{Estimate a suitable AR model (e.g. using the ar.ols() function) for the stationary time series (as determined in the previous point). How is the lag order determined by default? Use the estimated model to produceforecasts for the next year and plot them. Interpret their behaviour (i.e. are they converging towards a certain value? What could that be?). Use the produced forecasts to also forecast the change in the original time series.}
 
 ```{r}
 mod_log <- ar.ols(industrial_prod$log, na.action = na.omit, 
                 demean = TRUE, intercept = TRUE)
-summary(mod_log)
+mod_log
 
 mod_yoy <- ar.ols(industrial_prod$yoy, na.action = na.omit,
                 demean = FALSE, intercept = FALSE)
-summary(mod_yoy)
+mod_yoy
 ```
 By default the lag order is determined by the AIC information criterion. For the log of INDPRO a lag order of 25 is estimated. The model for the year on year changes is estimated with lag order 26.
 
@@ -113,7 +109,8 @@ By default the lag order is determined by the AIC information criterion. For the
 predict_mod_log <- predict(mod_log, na.omit(industrial_prod$log), n.ahead = 12)
 
 ts_log <- ts(industrial_prod$log, start=c(1959, 1), end=c(2023,1), frequency=12)
-ts_log_pred <- ts(c(tail(ts_log,n=1), predict_mod_log$pred), start = c(2023, 1), end=c(2024,2), frequency=12)
+ts_log_pred <- ts(c(tail(ts_log,n=1), predict_mod_log$pred), 
+                  start = c(2023, 1), end=c(2024,2), frequency=12)
 
 plot.ts(ts_log,
         xlim = c(2014, 2024),
@@ -139,7 +136,7 @@ plot.ts(ts_log,
         ylab = "log(INDPRO)",
         main = "40-year forecast for log(INDPRO)", 
         col = "steelblue") #plotting the predicted values
-points(ts_log_pred, type = "l", col = "darkred")
+points(ts_log_pred, type = "l", lty=2, col = "darkred")
 ```
 
 <!-- INTERPRETATION OF CONVERGENCE -->
@@ -148,7 +145,8 @@ points(ts_log_pred, type = "l", col = "darkred")
 predict_mod_yoy <- predict(mod_yoy, na.omit(industrial_prod$yoy), n.ahead = 12)
 
 ts_yoy <- ts(industrial_prod$yoy, start=c(1959, 1), end=c(2023,1), frequency=12)
-ts_yoy_pred <- ts(c(tail(na.omit(industrial_prod$yoy),n=1),predict_mod_yoy$pred), start = c(2023, 1), end=c(2024,2), frequency=12)
+ts_yoy_pred <- ts(c(tail(na.omit(industrial_prod$yoy),n=1),predict_mod_yoy$pred), 
+                  start = c(2023, 1), end=c(2024,2), frequency=12)
 
 plot.ts(ts_yoy,
         xlim = c(2000, 2024),
@@ -156,14 +154,15 @@ plot.ts(ts_yoy,
         ylab = "yoy(INDPRO)",
         main = "12-step ahead forecast for yoy(INDPRO)", 
         col = "steelblue") #plotting the predicted values
-points(ts_yoy_pred, type = "l", col = "darkred")
+points(ts_yoy_pred, type = "l", lty=2, col = "darkred")
 ```
 
 ```{r}
 predict_mod_yoy <- predict(mod_yoy, na.omit(industrial_prod$yoy), n.ahead = 480)
 
 ts_yoy <- ts(industrial_prod$yoy, start=c(1959, 1), end=c(2023,1), frequency=12)
-ts_yoy_pred <- ts(c(tail(na.omit(industrial_prod$yoy),n=1),predict_mod_yoy$pred), start = c(2023, 1), end=c(2062,1), frequency=12)
+ts_yoy_pred <- ts(c(tail(na.omit(industrial_prod$yoy),n=1),predict_mod_yoy$pred), 
+                  start = c(2023, 1), end=c(2062,1), frequency=12)
 
 plot.ts(ts_yoy,
         xlim = c(2000, 2062),
@@ -186,8 +185,8 @@ orig_forecast
 ```
 <!-- INTERPRETATION OF ORIGINAL TIME SERIES FORECAST -->
 
-\textit{Bonus Question:}
-```{r}
+## Subquestion (e) - Bonus question
+We start by defining the function. 
 ```{r}
 rmse_ar <- function(data, lag, hold_period) {
   #Remove holdout period from the end of the sample
@@ -237,11 +236,11 @@ We run the function for the two time series and compare the RMSE for AR models u
 For the log(industrial production) the lowest RMSE is produced by an AR(1) model for a 6 month holdout period. Over 12 months an AR(11) model serves as the best predictor. 
 
 Remarkably, based on the forecast performance, the optimal lag order is significantly lower than the lag order chosen by the AIC or BIC criterion. The AIC would have selected a model of order 25 (for the logged time series) and 26 (for the year on year growth rates).   
-```
 
+\pagebreak
 # Excercise 2 - Killian and Park (2009)
 
-\textit{and 3.1-3.3. Load the provided data by Kilian and Park (2009), which contains a measure of change in oil production, a measure of real economic activity, the real price of oil, and changes in real US dividend growth from 1973M1 to 2016M12.}
+\textit{Read Kilian \& Park (2009), who discuss the effects of oil price shocks on the US stock market, focus on Sections 2 and 3.1-3.3. Load the provided data by Kilian \& Park (2009), which contains a measure of change in oil production, a measure of real economic activity, the real price of oil, and changes in real US dividend growth from 1973M1 to 2016M12.}
 ```{r}
 data <- read.table("data_kilian_park_2009.txt")
 #("Global Oil Production Change","Global Real Activity", "Real Price of Oil", "US Stock Returns")
@@ -249,6 +248,7 @@ colnames(data) <- c("GOPC","GRA","RPO","USSR")
 head(data)
 ```
 
+## Subquestion (a)
 \textit{Using the the packages vars in R (or an equivalent one in another language), estimate the VAR described in section 2.2 using the variables in the same order as specified by Kilian and Park (2009).}
 ```{r}
 mod1 <- VAR(data, p=24, type="const")
@@ -256,19 +256,20 @@ mod1 <- VAR(data, p=24, type="const")
 
 Due to the enormity of the VAR consisting of 24 lags and 4 time series, we decided to exclude the output at this point of the assignment. The estimated coefficients are instead given in the appendix.
 
+## Subquestion (b)
 \textit{Using the estimated VAR, compute impulse response functions (take a look at the irf() function in vars, it uses the same identification scheme as Kilian \& Park (2009) propose (recursive ordering based on a Cholesky decomposition of the vcov-matrix of the errors) by default. Replicate Figure 1 and the lower panel in figure 3 of Kilian \& Park (2009).3 Interpret the results.}
 
-## Figure 1
+### Figure 1
 ```{r}
 # TO DO
 ```
 
-## Figure 3
+### Figure 3
 ```{r}
 # TO TO
 ```
 
-
+## Subquestion (c)
 \textit{Calculate forecast error variance decompositions for the included variables (take a look at the fevd() function in vars). Replicate Table 2 of Kilian and Park (2009). Interpret the results.}
 
 ```{r}
@@ -280,6 +281,7 @@ table2
 
 <!-- INTERPRETATION -->
 
+## Subquestion (d)
 \textit{Note that the dataset provided misses US stock market returns (due to the licensing of the underlying time series). Look for alternative data on the US stock market, create a variable similar to the one used by Kilian \& Park (2009). Re-estimate the model and replicate Figure 1 again as well as the top panel of Figure 3 and Table 1.5 Interpret the results.}
 
 In this exercise we decided to use the S\&P 500 returns as well as the CPI data from the FRED database to create monthly real stock returns.  
@@ -313,7 +315,7 @@ df_2 <- data[,c("GOPC", "GRA", "RPO", "adj_stock_returns")]
 var_rep <- VAR(df_2, p = 24, type = "const")
 ```
 
-## Replicating figure 1 
+### Figure 1 
 ```{r}
 # Supply Shock
 irf_supply_specific_shocks <- irf(var_rep, impulse = "GOPC", response = "RPO", boot = TRUE, cumulative = FALSE, n.ahead = 15)
@@ -332,19 +334,21 @@ irf_agg_demand_shocks <- irf(var_rep, impulse = "GRA", response = "RPO", boot = 
 # Oil specific-demand shock
 irf_oi_specific_demand_shocks <- irf(var_rep, impulse = "RPO", response = "RPO", boot = TRUE, cumulative = FALSE, n.ahead = 15)
 
+```
 
+```{r, figures-side, fig.show="hold", out.width="33%"}
 # Figure 1
-par(mfrow = c(1, 3))
-plot(irf_supply_specific_shocks)
+par(mar = c(4, 4, .1, .1))
+plot(irf_supply_specific_shocks, ylim=c(-6,12))
 
-plot(irf_agg_demand_shocks)
+plot(irf_agg_demand_shocks, ylim=c(-6,12))
 
-plot(irf_oi_specific_demand_shocks)
+plot(irf_oi_specific_demand_shocks, ylim=c(-6,12))
 ```
 
 <!-- INTERPRETATION -->
 
-## Replicating the Top Panel of Figure 3
+### Top Panel of Figure 3
 ```{r}
 # Supply shock
 irf_supply_shock_stock <- irf(var_rep, impulse = "GOPC", response = "adj_stock_returns", boot = TRUE, cumulative = TRUE, n.ahead = 15)
@@ -372,7 +376,7 @@ plot(irf_agg_demand_shock_stock)
 plot(irf_oi_specific_demand_shock)
 ```
 
-## Replicating Table 1
+### Table 1
 Similar to before, we replicate table 1 using our data on S\&P500 returns.
 ```{r}
 fevd_stock <- fevd(var_rep, n.ahead = 150)
