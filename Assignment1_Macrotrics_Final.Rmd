@@ -188,7 +188,55 @@ orig_forecast
 
 \textit{Bonus Question:}
 ```{r}
-# TO DO
+```{r}
+rmse_ar <- function(data, lag, hold_period) {
+  #Remove holdout period from the end of the sample
+  data_train <- data[1:(length(data) - hold_period)]
+  
+  # Estimate the AR model
+  ar_model <- ar.ols(data_train, order.max = lag, demean = TRUE, intercept = TRUE)
+  
+  # Forecast for the holdout period
+  data_test <- data[(length(data) - hold_period + 1):length(data)]
+  ar_forecasts <- predict(ar_model, n.ahead = hold_period)
+  
+  # Compute the RMSE
+  rmse <- sqrt(mean((data_test - ar_forecasts$pred)^2))
+  return(rmse)
+}
+
+
+#RMSE for 50 different lag orders and returning the minimal   
+rmse <- list()
+for (x in 1:50) {
+  rmse[[x]] <- rmse_ar(na.omit(industrial_prod$yoy), x, 6)
+}
+which.min((rmse))
+
+#RMSE for 50 different lag orders and returning the minimal   
+for (x in 1:50) {
+  rmse[[x]] <- rmse_ar(na.omit(industrial_prod$yoy), x, 12)
+}
+which.min((rmse))
+
+#RMSE for 50 different lag orders and returning the minimal   
+rmse <- list()
+for (x in 1:50) {
+  rmse[[x]] <- rmse_ar(na.omit(industrial_prod$log), x, 6)
+}
+which.min((rmse))
+
+#RMSE for 50 different lag orders and returning the minimal   
+for (x in 1:50) {
+  rmse[[x]] <- rmse_ar(na.omit(industrial_prod$log), x, 12)
+}
+which.min((rmse))
+```
+We run the function for the two time series and compare the RMSE for AR models up to order 50. For a holdout period of 6 months we find that the year on year growth rates are best predicted with an AR(16) model. For a holdout period of 12 months, an AR(1) model produces the lowest RMSE. 
+
+For the log(industrial production) the lowest RMSE is produced by an AR(1) model for a 6 month holdout period. Over 12 months an AR(11) model serves as the best predictor. 
+
+Remarkably, based on the forecast performance, the optimal lag order is significantly lower than the lag order chosen by the AIC or BIC criterion. The AIC would have selected a model of order 25 (for the logged time series) and 26 (for the year on year growth rates).   
 ```
 
 # Excercise 2 - Killian and Park (2009)
