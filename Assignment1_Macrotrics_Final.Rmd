@@ -341,14 +341,22 @@ plot(irf_supply_shock_stock, ylim = c(-3, 3))
 plot(irf_agg_demand_shock_stock, ylim = c(-3, 3))
 plot(irf_oi_specific_demand_shock, ylim = c(-3, 3))
 ```
-Interpretation: 
-The one standard deviation negative oil supply shock instantaneously increases the oil price and fades to zero after 10 periods. Notably the effect is statistically not distinguishable from zero in any period for the 95% bootstrapped confidence intervals. 
-The price of oil gradually increases in response to an aggregate demand shock and is statistically significant ten months after the aggregate demand shock. 
-An unexpected oil-specific demand shock leads to a pronounced increase in the real price of oil immediately and gradually declines. The effect size of a precautionary demand shock remains significantly larger than the other shocks in the following periods.  
-Overall, the figure underscores the notion that oil supply shocks have a comparably minor impact on the real price of oil in comparison to aggregate, and especially oil specific demand shocks. 
-Note concerning the confidence intervals: In the paper the confidence intervals were constructed using recursive design wild bootstrap. We use conventional boostrap standard errors calculated by the vars package in R. When comparing figure 1, the conventional boostrapped confidence bands are substantially wider. The effect sizes are therefore less statistically significant. 
 
-The lower panel in figure 3 presents the results for the effect on cumulative US real dividends growth rates. A negative oil supply shock decreases real dividend growth rates.  The effect becomes statistically significant after 14 months. In contrast to Figure 1, the effect of unanticipated demand shock differs in its direction to an aggregate demand shock. Unexpected demand shocks significantly decrease dividend growth rates. 
+The one standard deviation negative oil supply shock instantaneously increases the oil price and fades to zero after 10 periods. 
+In the paper the confidence intervals were constructed using recursive design wild bootstrap. 
+We use conventional boostrap standard errors calculated by the vars package in R. 
+When comparing figure 1, the conventional boostrapped confidence bands are substantially wider. 
+For the confidence bands reported by the vars package, the effect of an aggregate supply shock is not statistically distinguishable from zero in any period. 
+The price of oil gradually increases in response to an aggregate demand shock and is statistically significant ten months after the aggregate demand shock. 
+An unexpected oil-specific demand shock leads to a pronounced increase in the real price of oil immediately and gradually declines. 
+The effect size of a precautionary demand shock remains significantly larger than the other shocks in the following periods.  
+Overall, the figure underscores the notion that oil supply shocks have a comparably minor impact on the real price of oil in comparison to aggregate, and especially oil specific demand shocks. 
+
+The lower panel in figure 3 presents the results for the effect on cumulative US real dividends growth rates.
+A negative oil supply shock decreases real dividend growth rates.  
+The effect becomes statistically significant after 14 months. 
+In contrast to Figure 1, the effect of unanticipated demand shock differs in its direction to an aggregate demand shock. 
+Unexpected demand shocks significantly decrease dividend growth rates. 
 
 ## Subquestion (c)
 \textit{Calculate forecast error variance decompositions for the included variables (take a look at the fevd() function in vars). Replicate Table 2 of Kilian and Park (2009). Interpret the results.}
@@ -430,7 +438,6 @@ plot(irf_agg_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
 plot(irf_oi_specific_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
 ```
 
-**INTERPRETATION**
 
 ### Top Panel of Figure 3
 ```{r, echo=FALSE}
@@ -454,12 +461,13 @@ irf_oi_specific_demand_shock <- irf(var_rep, impulse = "RPO", response = "adj_st
 
 ```{r, fig.show="hold", out.width="33%", fig.height=10, echo=FALSE}
 # Figure 1
-plot(irf_supply_specific_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
+plot(irf_supply_shock_stock, ylim=c(-3,3))
 
-plot(irf_agg_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
+plot(irf_agg_demand_shock_stock, ylim=c(-3,3))
 
-plot(irf_oi_specific_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
+plot(irf_oi_specific_demand_shock, ylim=c(-3,3))
 ```
+
 
 ### Table 1
 Similar to before, we replicate table 1 using our data on S\&P500 returns.
