@@ -320,8 +320,7 @@ plot(irf_oi_specific_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
 ### Figure 3
 ```{r, echo=FALSE}
 # Supply shock
-irf_supply_shock_stock <- irf(mod1, impulse = "GOPC", response = "RPO", boot = TRUE, cumulative = TRUE, n.ahead = 15)
-
+irf_supply_shock_stock <- irf(mod1, impulse = "GOPC", response = "USSR", boot = TRUE, cumulative = TRUE, n.ahead = 15)
 # Inverting signs
 for(x in 1:length(irf_supply_shock_stock$irf$GOPC)){
   irf_supply_shock_stock$irf$GOPC[x,] <- irf_supply_shock_stock$irf$GOPC[x,]*(-1)
@@ -330,22 +329,26 @@ for(x in 1:length(irf_supply_shock_stock$irf$GOPC)){
 }
 
 # Aggregate-demand shock
-irf_agg_demand_shock_stock <- irf(mod1, impulse = "GRA", response = "RPO", boot = TRUE, cumulative = TRUE, n.ahead = 15)
+irf_agg_demand_shock_stock <- irf(mod1, impulse = "GRA", response = "USSR", boot = TRUE, cumulative = TRUE, n.ahead = 15)
 
 # Oil specific-demand shock
-irf_oi_specific_demand_shock <- irf(mod1, impulse = "RPO", response = "RPO", boot = TRUE, cumulative = TRUE, n.ahead = 15)
+irf_oi_specific_demand_shock <- irf(mod1, impulse = "RPO", response = "USSR", boot = TRUE, cumulative = TRUE, n.ahead = 15)
 ```
 
-```{r, fig.show="hold", out.width="33%", fig.height=10, echo=FALSE}
-# Figure 1
-plot(irf_supply_specific_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
-
-plot(irf_agg_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
-
-plot(irf_oi_specific_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
+```{r, fig.show="hold", , out.width="33%", fig.height=10, echo=FALSE}
+# Figure 3
+plot(irf_supply_shock_stock, ylim = c(-3, 3))
+plot(irf_agg_demand_shock_stock, ylim = c(-3, 3))
+plot(irf_oi_specific_demand_shock, ylim = c(-3, 3))
 ```
+Interpretation: 
+The one standard deviation negative oil supply shock instantaneously increases the oil price and fades to zero after 10 periods. Notably the effect is statistically not distinguishable from zero in any period for the 95% bootstrapped confidence intervals. 
+The price of oil gradually increases in response to an aggregate demand shock and is statistically significant ten months after the aggregate demand shock. 
+An unexpected oil-specific demand shock leads to a pronounced increase in the real price of oil immediately and gradually declines. The effect size of a precautionary demand shock remains significantly larger than the other shocks in the following periods.  
+Overall, the figure underscores the notion that oil supply shocks have a comparably minor impact on the real price of oil in comparison to aggregate, and especially oil specific demand shocks. 
+Note concerning the confidence intervals: In the paper the confidence intervals were constructed using recursive design wild bootstrap. We use conventional boostrap standard errors calculated by the vars package in R. When comparing figure 1, the conventional boostrapped confidence bands are substantially wider. The effect sizes are therefore less statistically significant. 
 
-**INTERPRETATION!**
+The lower panel in figure 3 presents the results for the effect on cumulative US real dividends growth rates. A negative oil supply shock decreases real dividend growth rates.  The effect becomes statistically significant after 14 months. In contrast to Figure 1, the effect of unanticipated demand shock differs in its direction to an aggregate demand shock. Unexpected demand shocks significantly decrease dividend growth rates. 
 
 ## Subquestion (c)
 \textit{Calculate forecast error variance decompositions for the included variables (take a look at the fevd() function in vars). Replicate Table 2 of Kilian and Park (2009). Interpret the results.}
@@ -357,7 +360,10 @@ rownames(table2) <- c("h=1","h=2","h=3","h=12","h=Inf")
 table2
 ```
 
-**INTERPRETATION!**
+The result of the table is identical to the results in Table 2 by Killian and Park. 
+The effect of shocks in the driving forces of the oil market does not impact significantly the stock return in horizon 1. However, in the long-term horizon it is significant and accounts for the variation of almost 23% in the US real stock return. 
+The shocks associated with the oil-specific and aggregate demand explain 16.31% of the total long-term variation while in the short-term horizon shocks would only account for 1.85% of the variation. The same is observed for the oil supply shocks where the effect one period later is only 0.2% and grows to explain 6.63% of the variation. 
+The effect is therefore 33 times more important in the later horizon than immediately.  The shocks on demand significantly impact more the real stock return that the shocks on the supply.
 
 ## Subquestion (d)
 \textit{Note that the dataset provided misses US stock market returns (due to the licensing of the underlying time series). Look for alternative data on the US stock market, create a variable similar to the one used by Kilian \& Park (2009). Re-estimate the model and replicate Figure 1 again as well as the top panel of Figure 3 and Table 1.5 Interpret the results.}
@@ -454,7 +460,6 @@ plot(irf_agg_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
 
 plot(irf_oi_specific_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
 ```
-**INTERPRETATION**
 
 ### Table 1
 Similar to before, we replicate table 1 using our data on S\&P500 returns.
@@ -466,5 +471,8 @@ rownames(fevd_stock) <- c("h=1","h=2","h=3","h=12","h=Inf")
 fevd_stock
 ```
 
-**INTERPRETATION**
+There are slight deviations in the data compared to the original document due to the use of a different dataset, however, the impact of each variable has a similar impact in terms of explaining power term of impact on the variation of deflated stock return and the total variation explained by the shocks on the supply and demand of crude oil on deflated stock return is 21% in our table versus 22% by Killian & Park (2009).  
+The impact on the variation in deflated stock return that can be explained by shock in oil supply, aggregate demand, or oil-specific demand is only 2.64% in the first post-shock period. 
+Thus the three elements have very small explanatory power in terms of variation in deflated stock return in the short term. However, in the long term, the impact of the three variables is 21% thus the shocks in variables driving the oil market have a significant impact on the US deflated stock return. 
+Moreover, we can see that oil-specific demand shocks have the highest impact, and explain 9% of the variation in the long-term, it is followed by the aggregate demand, then the oil supply negative shock. In Killian & Park the oil supply has slightly more explanatory power than the aggregate demand, but they are both almost.
 
