@@ -22,6 +22,8 @@ library(gridExtra)
 library(stargazer)
 ```
 
+We have just included the output in this assignment. The entire code can be found on https://github.com/therealLucasPaul/AdvMacroecotrics. 
+
 # Excercise 1: FRED-MD
 
 \textit{Download the current version of the FRED-MD database and load it into R (or another statistical software of your choice). Note that the second line in the CSV-file denotes the suggested transformation, you have to remove it.}
