@@ -266,10 +266,11 @@ for (x in 1:50) {
 which.min((rmse))
 ```
 We run the function for the two time series and compare the RMSE for AR models up to order 50. For a holdout period of 6 months we find that the year on year growth rates are best predicted with an AR(16) model. For a holdout period of 12 months, an AR(1) model produces the lowest RMSE. 
-
 For the log(industrial production) the lowest RMSE is produced by an AR(1) model for a 6 month holdout period. Over 12 months an AR(11) model serves as the best predictor. 
-
-Remarkably, based on the forecast performance, the optimal lag order is significantly lower than the lag order chosen by the AIC or BIC criterion. The AIC would have selected a model of order 25 (for the logged time series) and 26 (for the year on year growth rates).   
+Remarkably, based on the forecast performance, the optimal lag order is significantly lower than the lag order chosen by the AIC or BIC criterion. 
+The AIC would have selected a model of order 25 (for the logged time series) and 26 (for the year on year growth rates). 
+However the best model can vary strongly with the selection of the holdout period.   
+No definitive answer can be given on which model is best for the time series, but the performance of a simple AR(1) is striking.
 
 \pagebreak
 # Excercise 2 - Killian and Park (2009)
@@ -361,7 +362,14 @@ The lower panel in figure 3 presents the results for the effect on cumulative US
 A negative oil supply shock decreases real dividend growth rates.  
 The effect becomes statistically significant after 14 months. 
 In contrast to Figure 1, the effect of unanticipated demand shock differs in its direction to an aggregate demand shock. 
-Unexpected demand shocks significantly decrease dividend growth rates. 
+Aggregate demand shocks increase cumulative dividend growth rates. 
+This is despite the fact that aggregate demand shocks increase oil prices. 
+Killian and Park (2009) explain this pattern with two opposing effects of an unexpected increase in demand. 
+An unexpected aggregate demand shock raises economic activity and therefore also real dividends.
+But by raising the real price of oil, stock market performance is negatively impacted, leading to lower real dividends. 
+The direct effect dominates, and thus overall aggregate demand shocks raise real dividends.
+Oil-specific demand shocks significantly decrease dividend growth rates. 
+
 
 ## Subquestion (c)
 \textit{Calculate forecast error variance decompositions for the included variables (take a look at the fevd() function in vars). Replicate Table 2 of Kilian and Park (2009). Interpret the results.}
@@ -373,10 +381,12 @@ rownames(table2) <- c("h=1","h=2","h=3","h=12","h=Inf")
 table2
 ```
 
-The result of the table is identical to the results in Table 2 by Killian and Park. 
-The effect of shocks in the driving forces of the oil market does not impact significantly the stock return in horizon 1. However, in the long-term horizon it is significant and accounts for the variation of almost 23% in the US real stock return. 
-The shocks associated with the oil-specific and aggregate demand explain 16.31% of the total long-term variation while in the short-term horizon shocks would only account for 1.85% of the variation. The same is observed for the oil supply shocks where the effect one period later is only 0.2% and grows to explain 6.63% of the variation. 
-The effect is therefore 33 times more important in the later horizon than immediately.  The shocks on demand significantly impact more the real stock return that the shocks on the supply.
+We replicated the results of table 2 in Kililan and Park (2009). 
+In the short term only very little variation can be explained by demand and supply shocks of oil prices in real dividend growth rates. 
+However, in the mid and long-run, movements in the real price of oil can account for almost 23% of the variation in the US real stock returns. 
+In the long-run, 6.63 percent is explained by supply shocks, 8.38 by aggregate demand shocks, and 7.93 percent of the variation by oil-specific demand shocks.
+Demand shocks are more important than supply shocks. About 2/3 of the variation can be explained by aggregate and oil-specific demand shocks and only 1/3 by supply shocks.
+
 
 ## Subquestion (d)
 \textit{Note that the dataset provided misses US stock market returns (due to the licensing of the underlying time series). Look for alternative data on the US stock market, create a variable similar to the one used by Kilian \& Park (2009). Re-estimate the model and replicate Figure 1 again as well as the top panel of Figure 3 and Table 1.5 Interpret the results.}
@@ -446,7 +456,13 @@ plot(irf_agg_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
 plot(irf_oi_specific_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
 ```
 
-The shock in oil production leads to an increase in the price of real oil for several periods, approximately until the 6th one. It is then followed by a decline in the price for the following periods going under initial levels after period 10th. A positive shock to the aggregate demand results in a sustained increase in the price of oil over time. Finally, a positive shock in the oil-specific demand leads to a steep increase in the price of oil in the following period. However, the effect seems to decrease over time such that the increase in price in the period following the shock is higher than the increase that results in the latest periods. Also, note that we obtain a response above the one-standard error band which would imply a significant effect, however, it is certainly due to differences in the bootstrap construction. In general, the three shocks impact differently the oil price, and all carry the impact of a one-period shock in later periods. The results of Figure 1 are consistent with the one from Killian & Park 2009.
+The shock in oil production leads to an increase in the price of real oil for several periods, approximately until the 6th one. 
+It is then followed by a decline in the price for the following periods turning negative after period 10th. A positive shock to the aggregate demand results in a sustained increase in the price of oil over time.
+Finally, a positive shock in the oil-specific demand leads to a steep increase in the price of oil in the following period. 
+However, the effect seems to decrease over time such that the increase in price in the period following the shock is higher than the increase that results in the latest periods. 
+Also, note that we obtain a response above the confidence band, which, is due to the construction of the bootstrapped confidence bands. 
+In general, the three shocks have different impacts on the oil price, and all carry the impact of a one-period shock in later periods. 
+The results of Figure 1 are consistent with the one from Killian & Park 2009.
 
 ### Top Panel of Figure 3
 ```{r, echo=FALSE}
@@ -495,8 +511,8 @@ rownames(fevd_stock) <- c("h=1","h=2","h=3","h=12","h=Inf")
 fevd_stock
 ```
 
-There are slight deviations in the data compared to the original document due to the use of a different dataset, however, the impact of each variable has a similar impact in terms of explaining power term of impact on the variation of deflated stock return and the total variation explained by the shocks on the supply and demand of crude oil on deflated stock return is 21% in our table versus 22% by Killian & Park (2009).  
+There are slight deviations in the data compared to the original document due to the use of different stock market data, however, the impact of each variable has a similar impact in terms of explaining power term of impact on the variation of deflated stock return and the total variation explained by the shocks on the supply and demand of crude oil on deflated stock return is 21% in our table versus 22% by Killian and Park (2009).  
 The impact on the variation in deflated stock return that can be explained by shock in oil supply, aggregate demand, or oil-specific demand is only 2.64% in the first post-shock period. 
 Thus the three elements have very small explanatory power in terms of variation in deflated stock return in the short term. However, in the long term, the impact of the three variables is 21% thus the shocks in variables driving the oil market have a significant impact on the US deflated stock return. 
-Moreover, we can see that oil-specific demand shocks have the highest impact, and explain 9% of the variation in the long-term, it is followed by the aggregate demand, then the oil supply negative shock. In Killian & Park the oil supply has slightly more explanatory power than the aggregate demand, but they are both almost.
+Moreover, we can see that oil-specific demand shocks have the highest impact, and explain 9% of the variation in the long-term, it is followed by the aggregate demand, then the oil supply negative shock. In Killian and Park (2009) the oil supply has slightly more explanatory power than the aggregate demand, but they are both almost.
 
