@@ -50,6 +50,7 @@ ts_transform <- function(x) {
   return(output)
 }
 ```
+\pagebreak
 
 ## Subquestion (b)
 \textit{Use the created function to create a dataframe with the various transformation for US industrial production (mnemonic INDPRO), plot the logged time series and the yearly changes produced by the function. Briefly describe the properties of the time series.}
@@ -96,7 +97,8 @@ summary(ur.df(na.omit(industrial_prod$log), lags = 0, type="trend"))
 
 **Yoy_prod:** The test statistic value is smaller than the critical value ( -3.838<-2.58), therefore we can reject the null hypothesis, the time series has no unit root and conclude that the time series is stationary.
 
-**Log_prod**:\\
+**Log_prod**:
+
 __Test without drift nor trend__: 
 We cannot reject that the times series has a unit root as 5.161>-2.58. Thus, we cannot find evidence for stationarity. 
 
@@ -186,7 +188,7 @@ plot.ts(ts_yoy,
         xlim = c(2000, 2062),
         xlab = "Time",
         ylab = "yoy(INDPRO)",
-        main = "Forecast for yoy(INDPRO)", 
+        main = "40-year forecast for yoy(INDPRO)", 
         col = "steelblue") #plotting th predicted values
 points(ts_yoy_pred, type = "l", col = "darkred")
 ```
@@ -214,7 +216,8 @@ plot.ts(ts_orig,
         col = "steelblue") #plotting th predicted values
 points(ts_orig_pred, type = "l", lty=2, col = "darkred")
 ```
-<!-- INTERPRETATION OF ORIGINAL TIME SERIES FORECAST -->
+
+The forecast of the original time series predicts an increase in industrial production for 2 periods which should be followed by a significant decrease in period 3. Industrial production should then recover in the following periods with slight shifts from period to period without reaching the peak initially forecasted. This is similar to the forecast 
 
 ## Subquestion (e) - Bonus question
 We start by defining the function. 
@@ -319,6 +322,16 @@ plot(irf_agg_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
 plot(irf_oi_specific_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
 ```
 
+The one standard deviation negative oil supply shock instantaneously increases the oil price and fades to zero after 10 periods. 
+In the paper the confidence intervals were constructed using recursive design wild bootstrap. 
+We use conventional boostrap standard errors calculated by the vars package in R. 
+When comparing figure 1, the conventional boostrapped confidence bands are substantially wider. 
+For the confidence bands reported by the vars package, the effect of an aggregate supply shock is not statistically distinguishable from zero in any period. 
+The price of oil gradually increases in response to an aggregate demand shock and is statistically significant ten months after the aggregate demand shock. 
+An unexpected oil-specific demand shock leads to a pronounced increase in the real price of oil immediately and gradually declines. 
+The effect size of a precautionary demand shock remains significantly larger than the other shocks in the following periods.  
+Overall, the figure underscores the notion that oil supply shocks have a comparably minor impact on the real price of oil in comparison to aggregate, and especially oil specific demand shocks.
+
 ### Figure 3
 ```{r, echo=FALSE}
 # Supply shock
@@ -343,16 +356,6 @@ plot(irf_supply_shock_stock, ylim = c(-3, 3))
 plot(irf_agg_demand_shock_stock, ylim = c(-3, 3))
 plot(irf_oi_specific_demand_shock, ylim = c(-3, 3))
 ```
-
-The one standard deviation negative oil supply shock instantaneously increases the oil price and fades to zero after 10 periods. 
-In the paper the confidence intervals were constructed using recursive design wild bootstrap. 
-We use conventional boostrap standard errors calculated by the vars package in R. 
-When comparing figure 1, the conventional boostrapped confidence bands are substantially wider. 
-For the confidence bands reported by the vars package, the effect of an aggregate supply shock is not statistically distinguishable from zero in any period. 
-The price of oil gradually increases in response to an aggregate demand shock and is statistically significant ten months after the aggregate demand shock. 
-An unexpected oil-specific demand shock leads to a pronounced increase in the real price of oil immediately and gradually declines. 
-The effect size of a precautionary demand shock remains significantly larger than the other shocks in the following periods.  
-Overall, the figure underscores the notion that oil supply shocks have a comparably minor impact on the real price of oil in comparison to aggregate, and especially oil specific demand shocks. 
 
 The lower panel in figure 3 presents the results for the effect on cumulative US real dividends growth rates.
 A negative oil supply shock decreases real dividend growth rates.  
@@ -399,7 +402,10 @@ stockret_ts <- window(stockret_ts, start=c(1973,1), end=c(2006,12))
 plot(stockret_ts)
 ```
 
-Using this data, we replicate the VAR given above. Again, the estimated coefficients are given in the appendix.
+The deflated stock return time series exhibits a stationary process where the series seems to revolve around a constant mean. Also, there are significant shifts in the data over time, thus a high variance. The data looks cyclical.
+
+Using this data, we replicate the VAR given above.
+
 ```{r, echo=FALSE}
 
 data$adj_stock_returns <- stockret_ts[-1]
@@ -440,6 +446,7 @@ plot(irf_agg_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
 plot(irf_oi_specific_demand_shocks, ylim=c(-6,12),mar=c(0.01, 0.01, 0.01, 0.01))
 ```
 
+The shock in oil production leads to an increase in the price of real oil for several periods, approximately until the 6th one. It is then followed by a decline in the price for the following periods going under initial levels after period 10th. A positive shock to the aggregate demand results in a sustained increase in the price of oil over time. Finally, a positive shock in the oil-specific demand leads to a steep increase in the price of oil in the following period. However, the effect seems to decrease over time such that the increase in price in the period following the shock is higher than the increase that results in the latest periods. Also, note that we obtain a response above the one-standard error band which would imply a significant effect, however, it is certainly due to differences in the bootstrap construction. In general, the three shocks impact differently the oil price, and all carry the impact of a one-period shock in later periods. The results of Figure 1 are consistent with the one from Killian & Park 2009.
 
 ### Top Panel of Figure 3
 ```{r, echo=FALSE}
