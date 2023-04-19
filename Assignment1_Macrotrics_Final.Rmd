@@ -468,6 +468,13 @@ plot(irf_agg_demand_shock_stock, ylim=c(-3,3))
 plot(irf_oi_specific_demand_shock, ylim=c(-3,3))
 ```
 
+Figure 3 represents cumulative impulse responses, i.e., it is the sum of all impulse responses to either oil supply shocks, aggregate demand shocks, or oil-specific demand shocks over time. 
+We can observe that the cumulative effect of oil supply shock on the stock returns is almost insignificant. 
+It alternates between increased and decreased in the deflated stock returns. 
+Also, it might conduct in an increased value at the initial period, however in the later period the value decreased below the initial one. 
+It seems that an increase in the aggregate demand caused the deflated stock return to rise for several consecutive periods, here 11, and can be considered significant up to period 5 and between periods 7 to 10 approximately. 
+Finally, cumulative impulse responses for shocks to the oil-specific demand cause a significant and sustained decrease in the deflated stock return on the entire period span, it only seems to stop at period 14. 
+The results are once again similar to the ones in Killian & Park (2009).
 
 ### Table 1
 Similar to before, we replicate table 1 using our data on S\&P500 returns.
