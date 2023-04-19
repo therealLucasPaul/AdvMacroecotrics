@@ -100,17 +100,16 @@ summary(ur.df(na.omit(industrial_prod$log), lags = 0, type="trend"))
 **Log_prod**:
 
 __Test without drift nor trend__: 
-We cannot reject that the times series has a unit root as 5.161>-2.58. Thus, we cannot find evidence for stationarity. 
+We cannot reject that the times series has a unit root as 5.161>-2.58. Thus, we cannot find evidence for stationarity 
 
 __Test with drift and no trend__: 
-The first null hypothesis cannot be rejected as -3.34>-3.43, there is a unit root. 
-The second null hypothesis cannot be rejected either given that 21.33>6.43, thus there is a unit root and no drift. 
-No evidence for stationarity. 
+The first null hypothesis cannot be rejected at the one percent level as -3.34>-3.43.  
+The second null hypothesis cannot be rejected either given that 21.33>6.43. We thus find evidence for stationarity, given that the first null hypothesis can be rejected at the five percent level.  
 
 __Test with both drift and trend__: 
-The first null hypothesis (tau3) is not rejected as -1.41>-3.96, a unit root is present. 
-The second null hypothesis (phi3) is rejected given that 5.76<6.09, there is a unit root and there is a trend. 
+The first null hypothesis (tau3) is not rejected as -1.41>-3.12, even at the ten percent level. Therefore we cannot reject the presence of a unit root. The second null hypothesis (phi3) is rejected given that 5.76<6.09, there is a unit root and there is a trend. 
 The third null hypothesis (phi2) is not rejected 14.32>6.09, a unit root is present and there is no trend nor drift. This is inconsistent with the second null hypothesis. 
+Taken together even though wiht the inclusion of drift term the presence of a unit root can be rejected at the five percent level, the overall evidence for stationarity is rather weak. When including both a trend and a drift there is no evidence for stationarity of the time series. 
 
 
 ## Subquestion (d)
