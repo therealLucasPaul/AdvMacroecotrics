@@ -1,0 +1,345 @@
+---
+title: "Advanced Macroeconometrics - Assignment 2"
+author: "Lucas Unterweger, Katharina König, Miravet Jaime"
+date: "2023-04-21"
+output: pdf_document
+fontsize: 12pt
+---
+
+# Preliminary
+As always, the code which has been used to generate the plots etc. can be found in our GitHub repository [here](www.google.com).
+
+# Exercise 1
+## Question 1.1
+\textit{Simulate n=100 draws from a Normal, N(5, 9), distribution (using rnorm). Estimate the mean with the first 1,...,n (very n) draws. Discuss and visualise convergence of the estimates.}
+
+```{r,echo=FALSE, out.width = "85%"}
+library(RColorBrewer)
+set.seed(1234)
+n = 100
+normv <- rnorm(n, mean=5, sd=3)
+meanVector <- vector()
+for(i in seq(n)){
+   meanVector <- c(meanVector,sum(normv[1:i])/i)
+}
+plot(meanVector~seq(n), ylim=c(0,10), type="l", ylab="Mean Estimate", xlab="Number Of Draws")
+abline(h=5,col="red")
+```
+
+Here it can clearly be seen that with an increasing number of draws, the estimated mean converges to the true value of the mean ($\mu=5$). 
+
+## Question 1.2
+\textit{Simulate n=10000 draws from a Cauchy distribution with scale one by drawing from N(0,1)/N(0,1). Estimate the mean with the first 1,...n, draws. Discuss and visualise convergence of the estimates.}
+
+```{r,echo=FALSE, out.width = "85%"}
+set.seed(1234)
+n = 10000
+cauchyv <- rnorm(n,0,1)/rnorm(n,0,1)
+meanVector <- vector()
+for(i in seq(n)){
+   meanVector <- c(meanVector,sum(cauchyv[1:i])/i)
+}
+
+plot(meanVector~seq(n), ylim=c(-2,2), type="l", ylab="Mean Estimate", xlab="Number Of Draws")
+abline(h=0,col="red")
+```
+
+As commonly known, the expected value/mean of a Cauchy distribution does not exist. This can be seen by the plot above as the average of the drawn Cauchy variables does not converge to the $0$ we'd expect it to. 
+
+\pagebreak
+
+# Exercise 2
+\textit{You have observations on daily Alles Gurgelt tests in your office — $y = (y_1,\cdots,y_n)$ — and want to learn about the prevalence. There are 20 colleagues who test everyday. Assume that the data is independent and identically distributed.}
+
+## Question 2.1
+The class of conjugate priors for this problem, where the likelihood follows a binomial distribution, is given by Beta distributions: $\text{Beta}(\alpha, \beta)$ with $\alpha, \beta > 0$.
+The pdf of a Beta-Distribution with parameters $\alpha$ and $\beta$ is given by
+$$p(x|\alpha,\beta) = \frac{x^{\alpha-1}(1-x)^{\beta-1}}{\text{Beta}(\alpha,\beta)}$$
+with $\text{Beta}(\alpha,\beta) = \frac{\Gamma(\alpha)\Gamma(\beta)}{\Gamma(\alpha+\beta)}$, where $\Gamma(.)$ is the Gamma function. Furthermore we know that $\forall i\in[n]: y_i \sim \text{Bin   om} (m,q)$ with PDF $p(y_i|m,q)=\binom{m}{y_i}q^{y_i}(1-q)^{m-y_i}$.
+
+We first derive the likelihood function which is given by
+$$p(y|q) = \prod_{i=1}^np(y_i|q) = \left[\prod_{i=0}^n\binom{m}{y_i}\right]q^{\sum_{i=1}^{n}y_i}(1-q)^{\sum_{i=1}^{n}(m-y_i)}$$
+Using a general Beta distribution as the conjugate prior, the posterior distribution is - according to Bayes' theorem - proportional to
+$$p(q|y) \propto p(y|d)\times p(q)$$
+Thus we can compute
+$$ p(q|y) \propto \left[\prod_{i=0}^n\binom{20}{y_i}\right]q^{\sum_{i=1}^{n}y_i}(1-q)^{\sum_{i=1}^{n}(20-y_i)} \times \frac{q^{\alpha-1}(1-q)^{\beta-1}}{\text{Beta}(\alpha,\beta)}$$
+where we can drop constant values that do not depend on $q$, yielding 
+$$\propto q^{\left((\sum_{i=1}^{n}y_i)+\alpha\right)-1}(1-q)^{\left(\sum_{i=1}^{n}(20-y_i)+\beta\right)-1}$$
+Which again is just a Beta distribution with parameters $\alpha' = \sum_{i=1}^Ny_i + \alpha$ and $\beta' = \sum_{i=1}^N n -\sum_{i=1}^Ny_i + \beta$.
+
+## Question 2.2
+We are now given observations for $n=30$ with a total of ten positive tests. For computing the point estimates, we need a suitable prior distribution. For educational reason, we will test the following Beta-distributions:
+```{r, echo=FALSE}
+PointEstimates <- function(alpha,beta){
+  output <- data.frame()
+  for (i in seq(length(a))){
+    a <- alpha[i]
+    b <- beta[i]
+    mean <- a/(a+b)
+    mode <- (a-1)/(a+b+2)
+    var <- (a*b)/((a+b)^2*(a+b+1))
+    output <- rbind(output,c(a,b,mean,mode,var))
+  }
+  colnames(output) <- c("Alpha","Beta","Mean","Mode","Variance")
+  return(round(output,5))
+}
+```
+
+```{r, echo=FALSE, out.width = "85%"}
+a <- c(2,2,1,5,20)
+b <- c(20,5,1,2,2)
+cols <- brewer.pal(5, "Dark2")
+plot(NULL, xlim=c(0,1), ylim=c(0,8), ylab="PDF", xlab="")
+for (i in seq(5)) {
+  curve(dbeta(x,a[i],b[i]), from=0,to=1, lwd=2,col=cols[i],add = T)
+}
+legend(x="topright",
+       lwd=2,
+       lty=1,
+       col=cols,
+       legend = c("a=2,b=20","a=2,b=5","a=1,b=1","a=5,b=2","a=20,b=2"))
+
+```
+
+Using the given prior distributions, we can compute the posterior distributions which are given by
+
+```{r, echo=FALSE, out.width = "85%"}
+n <- 30
+sumy <- 10
+people <- 20
+alphaNew <- a + sumy
+betaNew <- b + (people*n-sumy)
+plot(NULL, xlim=c(0,0.1), ylim=c(0,100), ylab="PDF", xlab="")
+for (i in seq(5)) {
+  #curve(normConst[i]*x^(alphaNew[i]-1)*(1-x)^(betaNew[i]-1), from=0,to=0.1, lwd=2,col=cols[i],add = T)
+  curve(dbeta(x,alphaNew[i],betaNew[i]), from=0,to=0.1, lwd=2,col=cols[i],add = T)
+}
+legend(x="topright",
+       lwd=2,
+       lty=1,
+       col=cols,
+       legend = c("a=2, b=20","a=2, b=5","a=1, b=1","a=5, b=2","a=20, b=2"),
+       title = c("Prior Parameters"))
+```
+
+We will focus on the point estimates of the mean, the mode and the variance. For a random variable $X$ which follows a Beta-Distribution, those are given by
+$$VAR[X] = \frac{\alpha \beta}{(\alpha+\beta)^2(\alpha+\beta+1)} \quad E[X] = \frac{\alpha}{\alpha+\beta} \quad Mode = \frac{\alpha-1}{\alpha+\beta+2}$$
+given the chose priors, these are given by 
+```{r, echo=FALSE}
+output <-PointEstimates(a,b)
+output
+```
+
+and for the posteriors:
+```{r, echo=FALSE}
+output <-PointEstimates(alphaNew,betaNew)
+output
+```
+
+<!--DISCUSSION -->
+
+## Question 2.3
+\textit{Discuss sources of prior information for this problem and compare the impact of different priors on your point estimates.}
+
+A credible source of prior information could be the official government infection rates. Of course, there several additional information one could incorporate into the prior decision. For example, the vaccination rates in the office are possibly higher than in the overall population. (could imply lower infecction rates) Also, regional differences can be taken into account. Another source of information could be the COVID history of the office. How many people have already been infected? How high is the amount of regular contact between colleagues?
+
+## Question 2.4
+\textit{Discuss the assumption of independent and identically distributed data. How could you (conceptually) improve the model with this in mind?}
+
+In case that the assumption of i.i.d would not hold, then it could happen that the results of day $i$ depend on day $i-1$. In this specific example, we know that the Binomial distribution is the probability distribution of the number of successes in a sequence of independent experiments, where each experiment is a Bernoulli experiment. Were this assumption violated, e.g. the different $y_i$ depended on each other, we could not accurately retrieve the likelihood, which could lead to biased estimates. **HOW COULD WE IMPROVE?**      
+
+# Exercise 3
+
+We start by writing the function.
+```{r}
+simObs <- function(n,k,alpha,beta,sigma){
+  if(length(beta)==k){
+    
+    # Generate errors from (0,sigma)-normal distribution
+    errors <- rnorm(n,0,sigma)
+    
+    # Generate k covariates from a uniform distribution
+    x <- vector()
+    for (i in seq(k)) {
+      x <- cbind(x,runif(n, min=0,max=3))
+    }
+    
+    # Generate the dependent variables based on the given 
+    # independent variables and errors
+    y <- alpha + x %*% beta  + errors
+    
+    # Return data frame with the data
+    output <- data.frame(Y = y, X = x)
+    return(output)
+  }
+  else{
+    print("Number of variables K and length beta vector does not match!")
+    break
+  }
+}
+
+```
+
+## Question 3.1
+\textit{Simulate data with $k$=1 and $\sigma$= 1. Plot the regressor $x$ and regressand $y$ in a scatterplot; add a LS regression line. Repeat this 1,000 times and store $\beta_{LS}$ every time. Then create a histogram of the LS estimates — what do you see?}
+
+With our function, we generate data with $k=1$, $\sigma=1$, $\alpha=5$ and $\beta=3$. 
+
+```{r, echo=FALSE, out.width = "85%"}
+coeflist = vector()
+for (i in seq(1000)) {
+  input <- simObs(100,1,5,3,1)
+  mod <- lm(Y~X, data=input)
+  coeflist <- c(coeflist,mod$coefficients["X"])
+}
+hist(coeflist, main="Distribution of beta coefficients based on 1000 runs")
+varbeta <- var(coeflist)
+```
+
+We can see that the estimates are somewhat normally distributed with mean $3$ (the true value) and variance `r varbeta`. The more often we repeat this procedure, the smaller the variance would get.    
+
+## Question 3.2
+The remaining latent variable is just the parameter vector $\beta$.
+
+## Question 3.3
+A potentially interesting regression would be the relationship between the rise of populism - let's use the change in votes for populist parties in percentage points - and the economic development of the respective regions in e.g. GDP change compared to 25 years ago. More formally,
+$$Y_{VoteChange} = \alpha + \beta X_{EconomicGrowth}+u, \quad u \sim N(0,\sigma^2)$$
+In recent years, various studies have found evidence for the hypothesis that economic decline causes rise in populist support. Hence, one could assume that the relationship is negative. Similarly, for simplicity we assume the prior to be normally distributed. Some prior distribution could look like:
+
+```{r,  echo=FALSE, out.width = "85%"}
+plot(NULL, xlim=c(-10,10), ylim=c(0,0.8), ylab="PDF", xlab="Mean of Beta", main="Possible Prior Distributions for beta")
+mean <- c(0,-2,-5)
+sd <- c(2,1,0.5)
+for (i in seq(3)) {
+  curve(dnorm(x,mean[i],sd[i]), from=-10,to=10, lwd=2,col=cols[i],add = T)
+}
+```
+
+## Question 3.4
+
+For the purpose of this question, we simulate data with $\alpha=1$ and $\beta=-3$, which captures the previously given relationship. We will use the prior distribution with mean $-5$ and standard deviation $0.5$, hence a prior that is $N(-5,0.5)$. The posterior distribution is then given by
+```{r, echo=FALSE, out.width = "85%"}
+SimData <- simObs(50,1,1,-3,1)
+X <- cbind(1,SimData$X)
+Y <- SimData$Y
+mean_prior <- -5
+sigma_prior <- 0.5
+sigma_post <- solve((1/sigma_prior) + t(X)%*%X)
+mean_post <- sigma_post%*%(mean_prior/sigma_prior + t(X)%*%Y)
+
+x<-seq(-4,-2,0.01)
+d<-dnorm(x,mean_post[2],sigma_post[2,2])
+plot(x,d,type="l",lwd = 2, col = cols[1], xlab ="Beta", ylab = "Density",yaxt='n', main = "Posterior Density Plot for n=50")
+```
+
+```{r, echo=FALSE, out.width = "85%"}
+SimData <- simObs(100,1,1,-3,1)
+X <- cbind(1,SimData$X)
+Y <- SimData$Y
+mean_prior <- -5
+sigma_prior <- 0.5
+sigma_post <- solve((1/sigma_prior) + t(X)%*%X)
+mean_post <- sigma_post%*%(mean_prior/sigma_prior + t(X)%*%Y)
+
+x<-seq(-4,-2,0.01)
+d<-dnorm(x,mean_post[2],sigma_post[2,2])
+plot(x,d,type="l",lwd = 2, col = cols[1], xlab ="Beta", ylab = "Density",yaxt='n', main = "Posterior Density Plot for n=100")
+```
+
+```{r,echo=FALSE, out.width = "85%"}
+SimData <- simObs(200,1,1,-3,1)
+X <- cbind(1,SimData$X)
+Y <- SimData$Y
+mean_prior <- -5
+sigma_prior <- 0.5
+sigma_post <- solve((1/sigma_prior) + t(X)%*%X)
+mean_post <- sigma_post%*%(mean_prior/sigma_prior + t(X)%*%Y)
+
+x<-seq(-4,-2,0.01)
+d<-dnorm(x,mean_post[2],sigma_post[2,2])
+plot(x,d,type="l",lwd = 2, col = cols[1], xlab ="Beta", ylab = "Density",yaxt='n', main = "Posterior Density Plot for n=200")
+```
+
+\pagebreak
+
+# Exercise 4
+## Question 4.1
+
+
+We have data $y \sim N(\mu,1)$ and want to estimate $\mu$, hence a posterior distribution $p(\mu|y)$, which we can compute using Bayes' Theorem
+$$p(\mu|y) \propto p(y|\mu) \times p(\mu)$$
+We start by computing the likelihood $p(y|\mu,1)$ which is 
+$$p(y|\mu,1) = \prod_{i=1}^N p(y_i|\mu,1) = (2\pi)^{-N/2}\cdot \exp\left\{ -\frac{1}{2}\sum_{i=1}^N(y_i-\mu)^2\right\}$$
+$$ \propto \exp\left\{-\frac{1}{2}\sum_{i=1}^N(y_i-\mu)^2\right\} \propto \exp\left\{-\frac{-N(\mu-y_i)^2}{2}\right\} $$
+
+The prior is given by $\mu \sim N(\mu_0,\sigma_0^2)$. which means that after dropping constants we gain
+$$ p(\mu|\mu_0,\sigma_0^2) = \sqrt{2\pi\sigma_0^2}\exp\left\{-\frac{-(\mu-\mu_0)^2}{2\sigma_0^2}\right\} \propto \exp\left\{-\frac{-(\mu-\mu_0)^2}{2\sigma_0^2}\right\} $$
+
+Using Bayes's theorem we can compute the posterior density
+$$p(\mu|y) \propto \exp\left\{-\frac{-N(\mu-y_i)^2}{2}\right\}\times \exp\left\{-\frac{-(\mu-\mu_0)^2}{2\sigma_0^2}\right\} = \exp\left\{-\frac{1}{2}(N(\mu-\bar{y})^2 + \frac{1}{\sigma_0^2} (\mu-\mu_0)^2) \right\}$$
+$$=\exp\left\{-\frac{1}{2}((N+\sigma_0^{-2})\mu^2 - (\bar{y}N+\sigma_0^{-2}\mu_0)2\mu + (N\bar{y}^2 +\sigma_0^{-2}\mu_0 )\right\} $$
+$$\propto \exp\left\{-\frac{1}{2}(N+\sigma_0^{-2})(\mu^2 - \frac{\bar{y}N+\sigma_0^{-2}\mu_0}{N+\sigma_0^{-2}}2\mu)\right\}$$
+with $\sigma^* = (N+\sigma_0^{-2})^{-1}$ and $\mu^*=\frac{\bar{y}N+\sigma_0^{-2}\mu_0}{N+\sigma_0^{-2}}$, this yields
+$$\exp\left\{-\frac{1}{2\sigma^*}(\mu^2 - \mu^*2\mu)\right\} \propto \exp\left\{-\frac{1}{2\sigma^*}(\mu^2 - 2\mu^*\mu +(\mu^*)^2)\right\}=\exp\left\{-\frac{1}{2\sigma^*}(\mu-\mu^*)^2\right\} $$
+This is now just a normal distribution with mean $\mu^*$ and variance $\sigma^*$, thus
+$$N(\mu^*, \sigma^*) = N(\frac{\bar{y}N+\sigma_0^{-2}\mu_0}{N+\sigma_0^{-2}},(N+\sigma_0^{-2})^{-1})$$
+
+<!--HISTOGRAMS-->
+
+## Question 4.2
+
+We are given data $y \sim N(5,\sigma^2)$. We'll start by having a look at the likelihood which is given by
+$$ p(y|\mu,\sigma^{2})=\prod_{i=1}^Np(y_i|5,\sigma^2) = (2\pi\sigma^2)^{-0.5}\exp\left\{-\frac{(y_1-5)^2}{2\sigma^2} \right\}\cdots(2\pi\sigma^2)^{-0.5}\exp\left\{-\frac{(y_N-5)^2}{2\sigma^2} \right\}$$
+Simplifying the expression yields
+$$\propto (\sigma^2)^{-N/2}\exp\left\{ -\frac{1}{2\sigma^2}\sum_{i=1}^N(y_i-5)^2\right\} = (\sigma^{2-})^{N/2}\exp\left\{ -\frac{\sigma^{-2}}{2}\sum_{i=1}^N(y_i-5)^2\right\}$$
+The prior for $\sigma^{-2}$ follows a Gamma distribution with parameters $0.5$ and $\eta$. The pdf of such a distribution is given by
+$$p(\sigma^{-2}|0.5,\eta) = \frac{\eta^{0.5}}{\Gamma(0.5)}(\sigma^{-2})^{0.5-1}\exp\{-\eta(\sigma^{-2})\} \propto (\sigma^{-2})^{-0.5}\exp\{-\eta(\sigma^{-2})\}$$
+We can now use Bayes Theorem to compute the posterior density to gain
+$$p(\sigma^{-2}|y) \propto p(y|\sigma^{-2})\times p(\sigma^{-2})$$
+Thus, by plugging in our previous results:
+$$(\sigma^{2-})^{N/2}\exp\left\{ -\frac{\sigma^{-2}}{2}\sum_{i=1}^N(y_i-5)^2\right\} \times (\sigma^{-2})^{-0.5}\exp\{-\eta(\sigma^{-2})\} =$$ $$(\sigma^{-2})^{N/2-0.5}\exp\{-\frac{\sigma^{-2}}{2}\sum_{i=1}^N(y_i-5)^2-\eta(\sigma^{-2})\}$$
+$$=(\sigma^{2-})^{N/2-0.5}\exp\left\{-\sigma^{-2}\left(\frac{1}{2}\sum_{i=1}^N(y_i-5)^2-\eta\right)\right\}$$
+and this is just proportional to a Gamma distribution like
+$$\sigma^{-2}|y \sim G(N/2-0.5,\frac{1}{2}\sum_{i=1}^N(y_i-5)^2-\eta)$$
+To gain the posterior for $\sigma^2$, we can use the relationship between a Gamma and an inverted Gamma distribution:
+$$\sigma^{2}|y \sim G^{-1}(N/2-0.5,\frac{1}{2}\sum_{i=1}^N(y_i-5)^2-\eta)$$
+
+Here are the prior distributions for $\eta \in \{0.01, 1, 100\}$:
+
+```{r, echo=FALSE}
+alpha<-0.5
+eta <- c(0.01,1,100)
+
+plot(NULL, xlim=c(0,1), ylim=c(0,2), ylab="PDF", xlab="")
+for (i in seq(3)) {
+  curve(dgamma(x, shape = 0.5, rate = eta[i]), from = 0, to = 1, 
+        n=2000,add = T, col=cols[i],lwd=3)
+}
+legend(x="topright",
+       lwd=2,
+       lty=1,
+       col=cols[1:3],
+       legend = c("eta=0.01","eta=1","eta=100"),
+       title = c("Prior Parameters"))
+```
+
+## Question 4.3
+
+First, it is important to note that $\eta$ has to be strictly positive to be a parameter for the Gamma Distribution. Furtmermore, we know that the first parameter, the shape, is fixed to $0.5$. A conjugate prior for a Gamma with fixed shape is the Gamma distribution itself, which also satisfies the assumption that $\eta>0$. Let's choose a Hyperprior with parameters $0.5$ and $1$. More formally, let $\eta\sim G(0.5,1)$. This prior distribution looks like
+
+```{r, echo=FALSE}
+plot(NULL, xlim=c(0,20), ylim=c(0,0.5), ylab="PDF", xlab="", main="Hyperprior Distribution as Gamma(0.5,1)")
+curve(dgamma(x, shape = 0.5, rate = 1), from = 0, to = 20, n=2000,add = T, col=cols[i],lwd=3)
+```
+
+We can now simulate draws for $\eta$ and then use these to draw the $\sigma^2$. This yields the following Gamma-Gamma prior:
+
+```{r}
+etaDraw <- rgamma(10000,0.5,1)
+#hist(etaDraw)
+sigma <- 1/rgamma(10000,0.5,etaDraw)
+sigma <- sigma[sigma <= 1e3]
+plot(NULL, xlim=c(0,20), ylim=c(0,0.5), ylab="PDF", xlab="", main="Prior Distribution as Gamma(0.5,Eta)")
+plot(density(sigma,n = 1e7),xlim=c(0,20),add=TRUE)
+```
+
